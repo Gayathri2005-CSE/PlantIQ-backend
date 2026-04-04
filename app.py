@@ -258,9 +258,15 @@ def predict():
         if r.probs is None:
             return jsonify({"error": "Model output empty"}), 500
 
-        prediction = r.names[int(r.probs.top1)]
+        raw_prediction = r.names[int(r.probs.top1)]
 
-        key = prediction.lower().replace("_", " ").replace("-", " ").strip()
+        # clean text (this will go to frontend)
+        prediction = raw_prediction.replace("_", " ").title()
+
+        # use raw for matching
+       key = raw_prediction.lower().replace("_", " ").replace("-", " ").strip()
+
+       key = prediction.lower().replace("_", " ").replace("-", " ").strip()
 
         if key not in DISEASE_INFO:
             return jsonify({

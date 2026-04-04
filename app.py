@@ -113,7 +113,6 @@ def predict():
             return jsonify({"error": "Model output is empty"}), 500
 
         prediction = r.names[int(r.probs.top1)]
-        confidence = float(r.probs.top1conf)
 
         # 🔥 normalize key
         key = prediction.lower().replace("_", " ").strip()
@@ -126,13 +125,12 @@ def predict():
             })
 
         return jsonify({
-            "prediction": prediction,
-            "confidence": confidence,
-            "description": DISEASE_INFO[key]["description"],
-            "treatment": DISEASE_INFO[key]["treatment"],
-            "fertilizer": DISEASE_INFO[key]["fertilizer"],
-            "routine": DISEASE_INFO[key]["routine"]
-        })
+    "prediction": prediction,
+    "description": DISEASE_INFO[key]["description"],
+    "treatment": DISEASE_INFO[key]["treatment"],
+    "fertilizer": DISEASE_INFO[key]["fertilizer"],
+    "routine": DISEASE_INFO[key]["routine"]
+})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500

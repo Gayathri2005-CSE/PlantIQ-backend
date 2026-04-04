@@ -3,12 +3,18 @@ from flask_cors import CORS
 from ultralytics import YOLO
 import os
 import uuid
+import torch
 
 app = Flask(__name__)
 CORS(app)
 
 # =========================
-# 🔥 MODEL PATH (FIXED)
+# 🔥 SPEED + MEMORY FIX
+# =========================
+torch.set_num_threads(1)
+
+# =========================
+# 🔥 MODEL PATH
 # =========================
 MODEL_PATH = "models/best.pt"
 
@@ -16,6 +22,7 @@ if not os.path.exists(MODEL_PATH):
     raise FileNotFoundError(f"Model not found at {MODEL_PATH}")
 
 model = YOLO(MODEL_PATH)
+model.fuse()  # improves speed + reduces memory usage
 
 # =========================
 # 📁 UPLOAD FOLDER
@@ -31,7 +38,7 @@ def home():
     return "🌱 PlantIQ API Running Successfully..."
 
 # =========================
-# 🔥 PREDICT ROUTE (SAFE VERSION)
+# 🔥 PREDICT ROUTE (OPTIMIZED)
 # =========================
 @app.route("/predict", methods=["POST"])
 def predict():
@@ -41,30 +48,30 @@ def predict():
 
         file = request.files["image"]
 
-        # save image safely
         filename = f"{uuid.uuid4().hex}.jpg"
         filepath = os.path.join(UPLOAD_FOLDER, filename)
         file.save(filepath)
 
         # =========================
-        # 🤖 YOLO INFERENCE
+        # 🤖 OPTIMIZED INFERENCE
         # =========================
-        results = model(filepath)
+        results = model.predict(
+            source=filepath,
+            imgsz=320,
+            conf=0.25,
+            device="cpu",
+            verbose=False
+        )
+
         r = results[0]
 
-        # =========================
-        # 🔥 SAFE CHECK (PREVENT 500 ERROR)
-        # =========================
         if r.probs is None:
             return jsonify({
-                "error": "Model output is empty. Check if model is classification."
+                "error": "Model is not classification or output missing"
             }), 500
 
-        probs = r.probs
-        names = r.names
-
-        prediction = names[int(probs.top1)]
-        confidence = float(probs.top1conf)
+        prediction = r.names[int(r.probs.top1)]
+        confidence = float(r.probs.top1conf)
 
         return jsonify({
             "prediction": prediction,
@@ -72,13 +79,11 @@ def predict():
         })
 
     except Exception as e:
-        return jsonify({
-            "error": str(e)
-        }), 500
+        return jsonify({"error": str(e)}), 500
 
 
 # =========================
-# 🚀 RUN SERVER (RENDER READY)
+# 🚀 RUN (RENDER SAFE)
 # =========================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

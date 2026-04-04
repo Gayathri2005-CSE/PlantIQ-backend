@@ -8,15 +8,12 @@ app = Flask(__name__)
 CORS(app)
 
 # =========================
-# 🔥 LOAD MODEL (SAFE PATH)
+# 🔥 LOAD MODEL (FIXED PATH)
 # =========================
-MODEL_PATH = os.path.join(
-    "runs",
-    "classify",
-    "plant_disease_model",
-    "weights",
-    "best.pt"
-)
+MODEL_PATH = "models/best.pt"
+
+if not os.path.exists(MODEL_PATH):
+    raise FileNotFoundError(f"Model not found at {MODEL_PATH}")
 
 model = YOLO(MODEL_PATH)
 
@@ -26,7 +23,6 @@ model = YOLO(MODEL_PATH)
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-
 # =========================
 # 🌱 HOME ROUTE
 # =========================
@@ -34,20 +30,18 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 def home():
     return "🌱 PlantIQ API Running Successfully..."
 
-
 # =========================
 # 🔥 PREDICT ROUTE
 # =========================
 @app.route("/predict", methods=["POST"])
 def predict():
     try:
-        # check file exists
         if "image" not in request.files:
             return jsonify({"error": "No image uploaded"}), 400
 
         file = request.files["image"]
 
-        # safe filename (avoid overwrite issues)
+        # safe filename
         filename = f"{uuid.uuid4().hex}.jpg"
         filepath = os.path.join(UPLOAD_FOLDER, filename)
 
@@ -64,22 +58,18 @@ def predict():
         prediction = names[int(probs.top1)]
         confidence = float(probs.top1conf)
 
-        # =========================
-        # 📤 RESPONSE
-        # =========================
         return jsonify({
             "prediction": prediction,
             "confidence": confidence
         })
 
     except Exception as e:
-        return jsonify({
-            "error": str(e)
-        }), 500
+        return jsonify({"error": str(e)}), 500
 
 
 # =========================
-# 🚀 RUN APP (LOCAL ONLY)
+# 🚀 RUN FOR RENDER
 # =========================
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)

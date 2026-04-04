@@ -8,7 +8,7 @@ app = Flask(__name__)
 CORS(app)
 
 # =========================
-# 🔥 LOAD MODEL (FIXED PATH)
+# 🔥 MODEL PATH (FIXED)
 # =========================
 MODEL_PATH = "models/best.pt"
 
@@ -31,7 +31,7 @@ def home():
     return "🌱 PlantIQ API Running Successfully..."
 
 # =========================
-# 🔥 PREDICT ROUTE
+# 🔥 PREDICT ROUTE (SAFE VERSION)
 # =========================
 @app.route("/predict", methods=["POST"])
 def predict():
@@ -41,19 +41,27 @@ def predict():
 
         file = request.files["image"]
 
-        # safe filename
+        # save image safely
         filename = f"{uuid.uuid4().hex}.jpg"
         filepath = os.path.join(UPLOAD_FOLDER, filename)
-
         file.save(filepath)
 
         # =========================
-        # 🤖 YOLO PREDICTION
+        # 🤖 YOLO INFERENCE
         # =========================
         results = model(filepath)
+        r = results[0]
 
-        probs = results[0].probs
-        names = results[0].names
+        # =========================
+        # 🔥 SAFE CHECK (PREVENT 500 ERROR)
+        # =========================
+        if r.probs is None:
+            return jsonify({
+                "error": "Model output is empty. Check if model is classification."
+            }), 500
+
+        probs = r.probs
+        names = r.names
 
         prediction = names[int(probs.top1)]
         confidence = float(probs.top1conf)
@@ -64,11 +72,13 @@ def predict():
         })
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({
+            "error": str(e)
+        }), 500
 
 
 # =========================
-# 🚀 RUN FOR RENDER
+# 🚀 RUN SERVER (RENDER READY)
 # =========================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

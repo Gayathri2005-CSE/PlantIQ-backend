@@ -250,13 +250,16 @@ def predict():
         img = img.resize((320, 320))
         img.save(filepath)
 
-        results = model.predict(filepath, imgsz=320, conf=0.25)
+        results = model.predict(filepath, imgsz=160, conf=0.25, device='cpu')
         r = results[0]
 
         if r.probs is None:
             return jsonify({"error": "Model output empty"}), 500
 
         prediction = r.names[int(r.probs.top1)]
+        
+         # delete file (IMPORTANT)
+          os.remove(filepath)
 
         # 🔥 improved key matching
         key = prediction.lower().replace("_", " ").replace("-", " ").strip()

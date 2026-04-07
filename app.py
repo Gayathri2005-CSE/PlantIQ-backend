@@ -73,7 +73,7 @@ NPK உரம் மற்றும் இயற்கை உரம் பயன
 பூச்சி கண்காணிப்பு அவசியம்."""
 },
 
-"chilli leafspot": {
+"chilli leaf spot": {
 "description": """Leaf Spot is a fungal disease causing small brown or black spots on leaves. Severe infection leads to leaf drop and reduced yield.
 
 இது ஒரு பூஞ்சை நோய். இலைகளில் புள்ளிகள் தோன்றும்.""",
@@ -111,7 +111,7 @@ NPK உரம் மற்றும் இயற்கை உரம் பயன
 மிதமான நீர்."""
 },
 
-"groundnut leafspot": {
+"groundnut leaf spot": {
 "description": """Leaf Spot is a fungal disease causing dark circular spots leading to leaf fall and yield reduction.
 
 இது பூஞ்சை நோய்.""",
@@ -234,11 +234,20 @@ def predict():
             })
 
         return jsonify({
-            "prediction": prediction,
-            "description": DISEASE_INFO[key]["description"].strip(),
-            "treatment": DISEASE_INFO[key]["treatment"].strip(),
-            "fertilizer": DISEASE_INFO[key]["fertilizer"].strip(),
-            "routine": DISEASE_INFO[key]["routine"].strip()
+    "prediction": prediction,
+
+    "description_en": data["description"].split("\n\n")[0],
+    "description_ta": data["description"].split("\n\n")[1],
+
+    "treatment_en": data["treatment"].split("\n\n")[0],
+    "treatment_ta": data["treatment"].split("\n\n")[1],
+
+    "fertilizer_en": data["fertilizer"].split("\n\n")[0],
+    "fertilizer_ta": data["fertilizer"].split("\n\n")[1],
+
+    "routine_en": data["routine"].split("\n\n")[0],
+    "routine_ta": data["routine"].split("\n\n")[1],
+})
         })
 
     except Exception as e:
